@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'Merchants API' do
    describe 'index' do
-      it 'returns a json object of all merchants - happy path' do
+      it 'GET all merchants - happy path' do
          create_list(:merchant, 3)
    
          get api_v1_merchants_path
@@ -19,7 +19,7 @@ RSpec.describe 'Merchants API' do
          end
       end
 
-      it 'returns an empty collection when no merchants exist - sad path' do
+      it 'GET all merchants - sad path' do
          get api_v1_merchants_path
 
          expect(response.status).to eq(200)
@@ -31,7 +31,7 @@ RSpec.describe 'Merchants API' do
    end
  
    describe 'show' do
-      it 'returns the merchant data as a json object - happy path' do
+      it 'GET one merchant - happy path' do
         id = create(:merchant).id
 
         get api_v1_merchant_path(id)
@@ -46,7 +46,7 @@ RSpec.describe 'Merchants API' do
         expect(merchant[:data][:attributes][:name]).to be_a String
       end
 
-      it 'returns a 404 status if merchant is not found - sad path' do
+      it 'GET one merchant - sad path' do
          get api_v1_merchant_path(1)
 
          no_merchant = JSON.parse(response.body, symbolize_names: true)

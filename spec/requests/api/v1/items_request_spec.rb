@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'Items API' do
    describe 'index' do
-      it 'returns a json object of all items - happy path' do
+      it 'GET all items - happy path' do
          create_list(:item, 3)
    
          get api_v1_items_path
@@ -19,7 +19,7 @@ RSpec.describe 'Items API' do
          end
       end
 
-      it 'returns an empty collection when no items exist - sad path' do
+      it 'GET all items - sad path' do
          get api_v1_items_path
 
          expect(response.status).to eq(200)
@@ -31,7 +31,7 @@ RSpec.describe 'Items API' do
    end
  
    describe 'show' do
-      it 'returns the item data as a json object - happy path' do
+      it 'GET one item - happy path' do
          id = create(:item).id
          get api_v1_item_path(id)
  
@@ -48,7 +48,7 @@ RSpec.describe 'Items API' do
          expect(item[:data][:attributes][:merchant_id]).to be_an Integer
       end
 
-      it 'returns a 404 status if item is not found - sad path' do
+      it 'GET one item - sad path' do
          get api_v1_item_path(1)
 
          no_item = JSON.parse(response.body, symbolize_names: true)
@@ -57,6 +57,62 @@ RSpec.describe 'Items API' do
 
          expect(no_item).to have_key(:error)
          expect(no_item[:error][:exception]).to eq("Couldn't find Item with 'id'=1")
+      end
+   end
+
+   describe 'create' do
+      it 'POST create (then delete) one item - happy path' do
+         merchant_id = create(:merchant).id
+         item_params = ({
+                     name: 'Gameboy',
+                     description: 'Handheld gaming console',
+                     unit_price: 100.99,
+                     merchant_id: merchant_id,
+                     })
+         headers = {"CONTENT_TYPE" => "application/json"}
+         post api_v1_items_path, headers: headers, params: JSON.generate(item: item_params)
+      
+         new_item = Item.last 
+
+         expect(response.status).to eq(201)
+         expect(new_item.name).to eq(item_params[:name])
+         expect(new_item.description).to eq(item_params[:description])
+         expect(new_item.unit_price).to eq(item_params[:unit_price])
+         expect(new_item.merchant_id).to eq(item_params[:merchant_id])
+        
+
+         delete api_v1_item_path(Item.last)
+         expect(response.status).to eq(204)
+      end
+
+      it 'create errors if attributes are incorrect - sad path' do
+         merchant_id = create(:merchant).id
+         item_params = ({
+                     name: 'Gameboy',
+                     description: 'Handheld gaming console',
+                     merchant_id: merchant_id,
+                     })
+         headers = {"CONTENT_TYPE" => "application/json"}
+         post api_v1_items_path, headers: headers, params: JSON.generate(item: item_params)
+
+         expect(response.status).to eq(400)
+      end
+
+      it 'ignores attributes that are not allowed' do
+         merchant_id = create(:merchant).id
+         item_params = ({
+                     name: 'Gameboy',
+                     description: 'Handheld gaming console',
+                     unit_price: 100.99,
+                     merchant_id: merchant_id,
+                     extra_attribute: 'bonus stuff'
+                     })
+         headers = {"CONTENT_TYPE" => "application/json"}
+         post api_v1_items_path, headers: headers, params: JSON.generate(item: item_params)
+         item = JSON.parse(response.body, symbolize_names: true)
+
+         expect(response.status).to eq(201)
+         expect(item[:data][:attributes]).to_not have_key(:non_permitted_attribute)
       end
    end
 end
