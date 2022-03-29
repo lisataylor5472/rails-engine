@@ -1,8 +1,10 @@
 FactoryBot.define do
   factory :item do
-    name { "MyString" }
-    description { "MyString" }
-    unit_price { 1.5 }
-    merchants { nil }
+    name { Faker::Coffee.blend_name }
+    description { Faker::Lorem.sentence }
+    unit_price { Faker::Number.number(digits: 4) }
+
+    association :merchant
   end
 end
+
